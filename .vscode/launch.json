@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "API",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/server/main.go",
+            "args": []
+        },
+        {
+            "name": "Producer",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/producer/main.go",
+            "args": []
+        },
+    ],
+    "compounds": [
+        {
+            "name": "API + Producer",
+            "configurations": ["API","Producer"]
+        }
+    ]
+}
