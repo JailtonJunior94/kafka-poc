@@ -13,15 +13,27 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+type messageRequest struct {
+	Message string `json:"message"`
+}
+
 func main() {
 	router := chi.NewRouter()
 	router.Use(middleware.Heartbeat("/health"))
 
-	router.Post("/api/send", func(w http.ResponseWriter, r *http.Request) {
+	router.Post("/api/messages", func(w http.ResponseWriter, r *http.Request) {
+		var message messageRequest
+		err := json.NewDecoder(r.Body).Decode(&message)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		j, _ := json.Marshal(message)
 		deliveryChan := make(chan kafka.Event)
 
 		producer := NewKafkaProducer()
-		if err := Publish("Mensagem via GO", "http-messages", producer, nil, deliveryChan); err != nil {
+		if err := Publish(string(j), "http-messages", producer, nil, deliveryChan); err != nil {
 			log.Println(err.Error())
 		}
 
@@ -30,7 +42,7 @@ func main() {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		if err := json.NewEncoder(w).Encode("data"); err != nil {
+		if err := json.NewEncoder(w).Encode(message); err != nil {
 			log.Fatalf(err.Error())
 		}
 	})
@@ -41,7 +53,7 @@ func main() {
 		Handler:           router,
 	}
 
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", "6000"))
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", "4000"))
 	if err != nil {
 		panic(err)
 	}

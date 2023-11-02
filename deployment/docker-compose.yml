@@ -1,61 +1,56 @@
-version: '3'
+version: "3"
 
-services:
-  zookeeper:
-    image: "confluentinc/cp-zookeeper:6.1.0"
-    container_name: zookeeper
+services:  
+  api:
+    platform: linux/x86_64
+    container_name: api
+    image: api
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
     ports:
-      - 2181:2181
+      - "3000:3000"
+
+  zookeeper:
+    platform: linux/x86_64
+    image: confluentinc/cp-zookeeper:latest
     environment:
-      TZ: Sao_Paulo/Brazil
       ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - kafka_poc_net
 
   kafka:
-    image: "confluentinc/cp-enterprise-kafka:6.1.0"
-    container_name: kafka
+    platform: linux/x86_64
+    image: confluentinc/cp-kafka:latest
     depends_on:
       - zookeeper
     ports:
-      - '9092:9092'
+      - "9092:9092"
+      - "9094:9094"
     environment:
-      TZ: Sao_Paulo/Brazil
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
-      CONFLUENT_METRICS_ENABLE: 'false'
-    networks:
-      - kafka_poc_net
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENERS: INTERNAL://:9092,OUTSIDE://:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,OUTSIDE://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,OUTSIDE:PLAINTEXT
 
   control-center:
-    image: confluentinc/cp-enterprise-control-center:7.3.0
+    platform: linux/x86_64
+    image: confluentinc/cp-enterprise-control-center:6.0.1
     hostname: control-center
-    container_name: control-center
     depends_on:
       - kafka
     ports:
       - "9021:9021"
     environment:
-      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:9092'
       CONTROL_CENTER_REPLICATION_FACTOR: 1
-      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
-      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
-      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      CONTROL_CENTER_CONNECT_CLUSTER: http://kafka-connect:8083
       PORT: 9021
-    networks:
-      - kafka_poc_net
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect-base:6.1.0
+    platform: linux/x86_64
+    image: confluentinc/cp-kafka-connect-base:6.0.0
     container_name: kafka-connect
     depends_on:
       - zookeeper
@@ -63,7 +58,7 @@ services:
     ports:
       - 8083:8083
     environment:
-      CONNECT_BOOTSTRAP_SERVERS: "kafka:29092"
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:9092"
       CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: kafka-connect
       CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
@@ -85,22 +80,21 @@ services:
       #   CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       #  ---------------
       CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components,/data/connect-jars
+    # If you want to use the Confluent Hub installer to d/l component, but make them available
+    # when running this offline, spin up the stack once and then run :
+    #   docker cp kafka-connect:/usr/share/confluent-hub-components ./data/connect-jars
     volumes:
       - $PWD/data:/data
+    # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     command:
       - bash
       - -c
       - |
         echo "Installing Connector"
         confluent-hub install --no-prompt confluentinc/kafka-connect-http:1.0.3
+        confluent-hub install --no-prompt confluentinc/kafka-connect-rabbitmq-sink:1.7.6
         #
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run &
         #
         sleep infinity
-    networks:
-      - kafka_poc_net
-
-networks:
-  kafka_poc_net:
-    driver: bridge

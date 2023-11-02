@@ -1,0 +1,28 @@
+@startuml kafka-poc
+
+title "Kafka: Utilização de Kafka Connect com HTTP Sink"
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+!define FONTAWESOME https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/font-awesome-5
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v16.0/dist
+
+!define SPRITESURL https://raw.githubusercontent.com/rabelenda/cicon-plantuml-sprites/v1.0/sprites
+!includeurl SPRITESURL/kafka.puml
+!include DEVICONS/go.puml
+
+left to right direction
+AddRelTag("async", $lineStyle = DashedLine())
+System_Ext(APIsExternas, "APIs Externas", "Contexto de APIs externas", $sprite="go")
+
+System_Boundary(fluxo, "Infraestrutura interna [Cluster Kafka + APIs]") {
+    Container(APIs, "APIs Internas", "APIs Internas", "Contexto de APIs internas", $sprite="go")
+    ContainerDb(Kafka, "Kafka", "Kafka", "Cluster de Kafka", $sprite="kafka")
+    Container(KafkaConnect, "Kafka Connect", "HTTP Sink", "Kafka Connect utilizando HTTP Sink", $sprite="kafka")
+
+    Rel(APIs, Kafka, "Envia notificação para", "AMPQ/JSON", $tags="async")
+    Rel_R(KafkaConnect, Kafka, "HTTP Sink envia notificação para", "HTTPS/JSON", $tags="async")
+    Rel(KafkaConnect, APIsExternas, "Recebe notificação em", "HTTPS/JSON")
+}
+
+@enduml
