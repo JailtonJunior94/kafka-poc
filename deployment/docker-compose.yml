@@ -1,16 +1,6 @@
 version: "3"
 
 services:  
-  api:
-    platform: linux/x86_64
-    container_name: api
-    image: api
-    build:
-      context: ..
-      dockerfile: deployment/Dockerfile
-    ports:
-      - "3000:3000"
-
   zookeeper:
     platform: linux/x86_64
     image: confluentinc/cp-zookeeper:latest
@@ -98,3 +88,13 @@ services:
         /etc/confluent/docker/run &
         #
         sleep infinity
+
+  api:
+      platform: linux/x86_64
+      container_name: api
+      image: api
+      build:
+        context: ..
+        dockerfile: deployment/Dockerfile
+      ports:
+        - "3000:3000"
