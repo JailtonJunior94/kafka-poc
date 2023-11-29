@@ -37,7 +37,17 @@
     "compounds": [
         {
             "name": "API + Producer",
-            "configurations": ["API","Producer"]
+            "configurations": [
+                "API",
+                "Producer"
+            ]
+        },
+        {
+            "name": "Producer + Consumer",
+            "configurations": [
+                "Producer",
+                "Consumer"
+            ]
         }
     ]
 }
