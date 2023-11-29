@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package = "./pkg/v1/course";
+
+package course;
+
+message CourseMessage {
+  string id = 1;
+  string description = 2;
+}

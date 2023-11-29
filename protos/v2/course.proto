@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "./pkg/v2/course";
+
+package course;
+
+message CourseMessage {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  float	price = 4;
+}

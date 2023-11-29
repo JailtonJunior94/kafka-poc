@@ -1,6 +1,9 @@
 # Escopo
 Criação de um Kafka Connect para enviar notificações com HTTP Sink
 
+[Documentação de Connectors](https://docs.confluent.io/cloud/current/connectors/index.html) <br>
+[Documentação do HTTP Sink](https://docs.confluent.io/kafka-connectors/http/current/overview.html)
+
 # Desenho da Solução
 <p align="center">
   <img src="docs/kafka-poc.png" width="800" title="Main">

@@ -1,107 +1,28 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"net"
-	"net/http"
-	"time"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"github.com/JailtonJunior94/kafka-poc/pkg/kafka"
+	course "github.com/JailtonJunior94/kafka-poc/pkg/v2"
 )
 
-type messageRequest struct {
-	Message string `json:"message"`
-}
+const (
+	topic = "poc-schemaregistry"
+)
 
 func main() {
-	router := chi.NewRouter()
-	router.Use(middleware.Heartbeat("/health"))
-
-	router.Post("/api/messages", func(w http.ResponseWriter, r *http.Request) {
-		var message messageRequest
-		err := json.NewDecoder(r.Body).Decode(&message)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		j, _ := json.Marshal(message)
-		deliveryChan := make(chan kafka.Event)
-
-		producer := NewKafkaProducer()
-		if err := Publish(string(j), "http-messages", producer, nil, deliveryChan); err != nil {
-			log.Println(err.Error())
-		}
-
-		go DeliveryReport(deliveryChan)
-		producer.Flush(2000)
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(200)
-		if err := json.NewEncoder(w).Encode(message); err != nil {
-			log.Fatalf(err.Error())
-		}
-	})
-
-	server := http.Server{
-		ReadTimeout:       time.Duration(10) * time.Second,
-		ReadHeaderTimeout: time.Duration(10) * time.Second,
-		Handler:           router,
-	}
-
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", "4000"))
+	producer, err := kafka.NewProducer("localhost:9092", "http://localhost:8081/")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	server.Serve(listener)
-}
+	defer producer.Close()
 
-func NewKafkaProducer() *kafka.Producer {
-	configMap := &kafka.ConfigMap{
-		"bootstrap.servers":   "localhost:9094",
-		"delivery.timeout.ms": "0",
-		"acks":                "1",
-		"enable.idempotence":  "false",
-	}
-
-	producer, err := kafka.NewProducer(configMap)
+	msg := &course.CourseMessage{Id: "Id", Description: "Novo curso"}
+	offset, err := producer.ProduceMessage(topic, msg)
 	if err != nil {
-		log.Println(err.Error())
-		panic(err)
+		log.Fatal(err)
 	}
-	return producer
-}
-
-func Publish(message, topic string, producer *kafka.Producer, key []byte, deliveryChan chan kafka.Event) error {
-	msg := &kafka.Message{
-		Value: []byte(message),
-		TopicPartition: kafka.TopicPartition{
-			Topic:     &topic,
-			Partition: kafka.PartitionAny,
-		},
-		Key: key,
-	}
-
-	if err := producer.Produce(msg, deliveryChan); err != nil {
-		return err
-	}
-	return nil
-}
-
-func DeliveryReport(deliveryChan chan kafka.Event) {
-	for e := range deliveryChan {
-		switch ev := e.(type) {
-		case *kafka.Message:
-			if ev.TopicPartition.Error != nil {
-				fmt.Println("erro ao enviar mensagem")
-				return
-			}
-			fmt.Println("mensagem enviada: ", ev.TopicPartition)
-			return
-		}
-	}
+	fmt.Println(offset)
 }
