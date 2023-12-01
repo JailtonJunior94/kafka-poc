@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package = "./pkg/v1/pix";
+
+package pix;
+
+message PixMessage {
+  string type = 1;
+  float amount = 2;
+}

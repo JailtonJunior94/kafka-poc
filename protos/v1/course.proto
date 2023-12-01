@@ -7,4 +7,5 @@ package course;
 message CourseMessage {
   string id = 1;
   string description = 2;
+  string teste = 3;
 }
