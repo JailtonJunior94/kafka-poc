@@ -5,7 +5,9 @@ import (
 	"log"
 
 	"github.com/JailtonJunior94/kafka-poc/pkg/kafka"
-	pix "github.com/JailtonJunior94/kafka-poc/pkg/v3"
+	course "github.com/JailtonJunior94/kafka-poc/pkg/v1"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -19,7 +21,7 @@ func main() {
 	}
 	defer producer.Close()
 
-	msg := &pix.PixMessage{Type: "pix_out", Amount: 100}
+	msg := &course.CourseMessage{Id: uuid.New().String(), Description: "Description"}
 	offset, err := producer.ProduceMessage(topic, msg)
 	if err != nil {
 		log.Fatal(err)
