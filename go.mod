@@ -1,6 +1,6 @@
 module github.com/JailtonJunior94/kafka-poc
 
-go 1.21.3
+go 1.21
 
 require (
 	github.com/confluentinc/confluent-kafka-go v1.9.2

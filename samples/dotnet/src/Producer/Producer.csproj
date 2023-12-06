@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-Producer-c7a6b1f9-f985-4420-97fa-102cc648643a</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Confluent.SchemaRegistry.Serdes.Protobuf" Version="2.1.1" />
+    <PackageReference Include="Grpc.Tools" Version="2.54.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+     <Protobuf Include="../../../../protos/v1/course.proto" />
+  </ItemGroup>
+</Project>

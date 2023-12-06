@@ -21,7 +21,7 @@ func main() {
 	}
 	defer producer.Close()
 
-	msg := &course.CourseMessage{Id: uuid.New().String(), Description: "Description"}
+	msg := &course.CourseMessage{Id: uuid.New().String(), Description: "Enviado via GoLang"}
 	offset, err := producer.ProduceMessage(topic, msg)
 	if err != nil {
 		log.Fatal(err)
