@@ -47,15 +47,15 @@
             }
         },
         {
+            "name": "Producer [NodeJS]",
             "type": "node",
             "request": "launch",
-            "name": "Producer [NodeJS]",
-            "program": "${workspaceFolder}/producer/index.ts",
-            "preLaunchTask": "tsc: build - tsconfig.json",
+            "program": "${workspaceFolder}/samples/node/src/index.ts",
+            "preLaunchTask": "tsc: build - samples/node/tsconfig.json",
             "outFiles": [
-                "${workspaceFolder}/dist/**/*.js"
+                "${workspaceFolder}/samples/node/dist/**/*.js"
             ]
-        },
+        }
     ],
     "compounds": [
         {
