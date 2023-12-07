@@ -25,3 +25,6 @@ proto-gen-v2:
 proto-gen-v3:
 	protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative protos/v3/*.proto
 	mv protos/v3/*.go pkg/v3/
+
+proto-gen-node:
+	protoc --plugin=samples/node/node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./samples/node/src/generated protos/v1/*.proto

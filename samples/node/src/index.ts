@@ -1,12 +1,12 @@
 import { Kafka } from "kafkajs";
 import {
     SchemaRegistry,
-    readAVSCAsync,
+    SchemaType,
 } from "@kafkajs/confluent-schema-registry";
+import { CourseMessage } from './generated/protos/v1/course'
 
 const TOPIC = "poc-schemaregistry";
 
-// configure Kafka broker
 const kafka = new Kafka({
     brokers: ["localhost:9092"],
 });
@@ -17,66 +17,65 @@ const registry = new SchemaRegistry({
 
 const producer = kafka.producer();
 
-declare type MyMessage = {
-    id: string;
-    value: number;
-};
 
 const registerSchema = async () => {
     try {
-        const schema = await readAVSCAsync("./avro/schema.avsc");
-        const { id } = await registry.register(schema);
-        return id;
+        const schema = `
+        syntax = "proto3";
+
+        option go_package = "./pkg/v1/course";
+        
+        package course;
+        
+        message CourseMessage {
+          string id = 1;
+          string description = 2;
+        }
+      `
+
+
+        const id = await registry.register({ type: SchemaType.PROTOBUF, schema: schema })
+        return id
+
+
+
     } catch (e) {
         console.log(e);
     }
 };
 
-const produceToKafka = async (registryId: number, message: MyMessage) => {
-    await producer.connect();
-
-    const outgoingMessage = {
-        key: message.id,
-        value: await registry.encode(registryId, message),
-    };
-
-    await producer.send({
-        topic: TOPIC,
-        messages: [outgoingMessage],
-    });
-
-    await producer.disconnect();
-};
-
-// create the kafka topic where we are going to produce the data
-const createTopic = async () => {
+const produceToKafka = async (registryId: number, message: any) => {
     try {
-        const topicExists = (await kafka.admin().listTopics()).includes(TOPIC);
-        if (!topicExists) {
-            await kafka.admin().createTopics({
-                topics: [
-                    {
-                        topic: TOPIC,
-                        numPartitions: 1,
-                        replicationFactor: 1,
-                    },
-                ],
-            });
-        }
+        await producer.connect();
+        const outgoingMessage = {
+            key: message.id,
+            value: await registry.encode(registryId, message),
+        };
+
+        await producer.send({
+            topic: TOPIC,
+            messages: [outgoingMessage],
+        });
+
+        await producer.disconnect();
     } catch (error) {
-        console.log(error);
+        console.log(`There was an error producing the message: ${error}`);
     }
 };
 
 const produce = async () => {
-    await createTopic();
+    const registryId = await registerSchema();
+
+
+    const course: CourseMessage = {
+        id: "id",
+        description: "description"
+    }
+    const serializedMessage = CourseMessage.encode(course).finish()
+
     try {
-        const registryId = await registerSchema();
-        if (registryId) {
-            const message: MyMessage = { id: "1", value: 1 };
-            registryId && (await produceToKafka(registryId, message));
-            console.log(`Produced message to Kafka: ${JSON.stringify(message)}`);
-        }
+        await produceToKafka(1, serializedMessage)
+
     } catch (error) {
         console.log(`There was an error producing the message: ${error}`);
     }
